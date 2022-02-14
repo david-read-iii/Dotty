@@ -1,5 +1,9 @@
 package com.davidread.dotty;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
+import android.animation.AnimatorSet;
+import android.animation.ValueAnimator;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
@@ -7,6 +11,7 @@ import android.graphics.Path;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.animation.AccelerateInterpolator;
 
 import java.util.ArrayList;
 
@@ -77,6 +82,11 @@ public class DotsGrid extends View {
     private Paint mPathPaint;
 
     /**
+     * {@link AnimatorSet} to animate dots within this {@link DotsGrid}.
+     */
+    private AnimatorSet mAnimatorSet;
+
+    /**
      * Constructs a new {@link DotsGrid}.
      *
      * @param context {@link Context} for the superclass.
@@ -101,6 +111,9 @@ public class DotsGrid extends View {
 
         // The path between connected dots.
         mDotPath = new Path();
+
+        // For animating dots.
+        mAnimatorSet = new AnimatorSet();
     }
 
     /**
@@ -233,5 +246,47 @@ public class DotsGrid extends View {
                 dot.centerY = row * mCellHeight + (mCellHeight / 2f);
             }
         }
+    }
+
+    /**
+     * Animates the disappearance of dots selected in {@link #mGame}.
+     */
+    public void animateDots() {
+
+        // For storing many animations.
+        ArrayList<Animator> animations = new ArrayList<>();
+
+        // Get an animation to make selected dots disappear.
+        animations.add(getDisappearingAnimator());
+
+        // Play animations (just one right now) together, then reset radius to full size .
+        mAnimatorSet = new AnimatorSet();
+        mAnimatorSet.playTogether(animations);
+        mAnimatorSet.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                resetDots();
+            }
+        });
+        mAnimatorSet.start();
+    }
+
+    /**
+     * Returns a {@link ValueAnimator} that makes all dots selected by {@link #mGame} shrink and
+     * disappear by reducing each individual {@link Dot#radius} field.
+     *
+     * @return A {@link ValueAnimator} that shrinks and disappears selected dots.
+     */
+    private ValueAnimator getDisappearingAnimator() {
+        ValueAnimator animator = ValueAnimator.ofFloat(1, 0);
+        animator.setDuration(100);
+        animator.setInterpolator(new AccelerateInterpolator());
+        animator.addUpdateListener(animation -> {
+            for (Dot dot : mGame.getSelectedDots()) {
+                dot.radius = DOT_RADIUS * (float) animation.getAnimatedValue();
+            }
+            invalidate();
+        });
+        return animator;
     }
 }

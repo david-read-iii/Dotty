@@ -73,8 +73,11 @@ public class MainActivity extends AppCompatActivity {
             // If done selecting dots then replace selected dots and display new moves and score.
             if (selectionStatus == DotsGrid.DotSelectionStatus.Last) {
                 if (mGame.getSelectedDots().size() > 1) {
-                    mGame.finishMove();
-                    updateMovesAndScore();
+                    mDotsGrid.animateDots();
+
+                    // These methods must be called AFTER the animation completes
+                    //mGame.finishMove();
+                    //updateMovesAndScore();
                 } else {
                     mGame.clearSelectedDots();
                 }
