@@ -12,6 +12,7 @@ import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.animation.AccelerateInterpolator;
+import android.view.animation.BounceInterpolator;
 
 import java.util.ArrayList;
 
@@ -259,7 +260,23 @@ public class DotsGrid extends View {
         // Get an animation to make selected dots disappear.
         animations.add(getDisappearingAnimator());
 
-        // Play animations (just one right now) together, then reset radius to full size .
+        /* Get animation to make lowest selected dots in each column and all dots above them to fall
+         * with a bounce to their correct positions. */
+        ArrayList<Dot> lowestDots = mGame.getLowestSelectedDots();
+        for (Dot dot : lowestDots) {
+            int rowsToMove = 1;
+            for (int row = dot.row - 1; row >= 0; row--) {
+                Dot dotToMove = mGame.getDot(row, dot.col);
+                if (dotToMove.selected) {
+                    rowsToMove++;
+                } else {
+                    float targetY = dotToMove.centerY + (rowsToMove * mCellHeight);
+                    animations.add(getFallingAnimator(dotToMove, targetY));
+                }
+            }
+        }
+
+        // Play animations together, then reset radius values to full size.
         mAnimatorSet = new AnimatorSet();
         mAnimatorSet.playTogether(animations);
         mAnimatorSet.addListener(new AnimatorListenerAdapter() {
@@ -285,6 +302,25 @@ public class DotsGrid extends View {
             for (Dot dot : mGame.getSelectedDots()) {
                 dot.radius = DOT_RADIUS * (float) animation.getAnimatedValue();
             }
+            invalidate();
+        });
+        return animator;
+    }
+
+    /**
+     * Returns a {@link ValueAnimator} that animates the falling of a passed {@link Dot} by
+     * modifying its {@link Dot#centerY} field.
+     *
+     * @param dot          {@link Dot} to animate.
+     * @param destinationY {@link Dot#centerY} value to finish on.
+     * @return A {@link ValueAnimator} that animates the falling of the passed {@link Dot}.
+     */
+    private ValueAnimator getFallingAnimator(final Dot dot, float destinationY) {
+        ValueAnimator animator = ValueAnimator.ofFloat(dot.centerY, destinationY);
+        animator.setDuration(300);
+        animator.setInterpolator(new BounceInterpolator());
+        animator.addUpdateListener(animation -> {
+            dot.centerY = (float) animation.getAnimatedValue();
             invalidate();
         });
         return animator;
