@@ -57,7 +57,8 @@ public class MainActivity extends AppCompatActivity {
 
     /**
      * {@link DotsGrid.DotsGridListener} that specifies what to do when a dot is touched on
-     * {@link #mDotsGrid}. It registers each dot click from {@link #mDotsGrid} to {@link #mGame}.
+     * {@link #mDotsGrid} and what to do after {@link DotsGrid#animateDots()} is called. It
+     * registers each dot click from {@link #mDotsGrid} to {@link #mGame}.
      */
     private final DotsGrid.DotsGridListener mGridListener = new DotsGrid.DotsGridListener() {
 
@@ -70,14 +71,9 @@ public class MainActivity extends AppCompatActivity {
             // Add/remove dot to/from selected dots.
             DotsGame.DotStatus addStatus = mGame.processDot(dot);
 
-            // If done selecting dots then replace selected dots and display new moves and score.
             if (selectionStatus == DotsGrid.DotSelectionStatus.Last) {
                 if (mGame.getSelectedDots().size() > 1) {
                     mDotsGrid.animateDots();
-
-                    // These methods must be called AFTER the animation completes
-                    //mGame.finishMove();
-                    //updateMovesAndScore();
                 } else {
                     mGame.clearSelectedDots();
                 }
@@ -85,6 +81,13 @@ public class MainActivity extends AppCompatActivity {
 
             // Display changes to the game.
             mDotsGrid.invalidate();
+        }
+
+        @Override
+        public void onAnimationFinished() {
+            mGame.finishMove();
+            mDotsGrid.invalidate();
+            updateMovesAndScore();
         }
     };
 

@@ -30,10 +30,14 @@ public class DotsGrid extends View {
 
     /**
      * {@link DotsGridListener} defines an interface that a controller class should implement and
-     * pass into this {@link DotsGrid} to specify what to do when a dot is selected.
+     * pass into this {@link DotsGrid} to specify what to do when a dot is selected and what to do
+     * after a dots animation is finished.
      */
     public interface DotsGridListener {
+
         void onDotSelected(Dot dot, DotSelectionStatus status);
+
+        void onAnimationFinished();
     }
 
     /**
@@ -156,20 +160,22 @@ public class DotsGrid extends View {
             }
         }
 
-        // Draw connector.
-        ArrayList<Dot> selectedDots = mGame.getSelectedDots();
-        if (!selectedDots.isEmpty()) {
-            mDotPath.reset();
-            Dot dot = selectedDots.get(0);
-            mDotPath.moveTo(dot.centerX, dot.centerY);
+        // Only draw connector when the animations aren't running.
+        if (!mAnimatorSet.isRunning()) {
+            ArrayList<Dot> selectedDots = mGame.getSelectedDots();
+            if (!selectedDots.isEmpty()) {
+                mDotPath.reset();
+                Dot dot = selectedDots.get(0);
+                mDotPath.moveTo(dot.centerX, dot.centerY);
 
-            for (int i = 1; i < selectedDots.size(); i++) {
-                dot = selectedDots.get(i);
-                mDotPath.lineTo(dot.centerX, dot.centerY);
+                for (int i = 1; i < selectedDots.size(); i++) {
+                    dot = selectedDots.get(i);
+                    mDotPath.lineTo(dot.centerX, dot.centerY);
+                }
+
+                mPathPaint.setColor(mDotColors[dot.color]);
+                canvas.drawPath(mDotPath, mPathPaint);
             }
-
-            mPathPaint.setColor(mDotColors[dot.color]);
-            canvas.drawPath(mDotPath, mPathPaint);
         }
     }
 
@@ -194,8 +200,8 @@ public class DotsGrid extends View {
     @Override
     public boolean onTouchEvent(MotionEvent event) {
 
-        // Only execute when a listener exists.
-        if (mGridListener == null) return true;
+        // Only execute when a listener exists and the animations aren't running
+        if (mGridListener == null || mAnimatorSet.isRunning()) return true;
 
         // Determine which dot is pressed.
         int x = (int) event.getX();
@@ -283,6 +289,7 @@ public class DotsGrid extends View {
             @Override
             public void onAnimationEnd(Animator animation) {
                 resetDots();
+                mGridListener.onAnimationFinished();
             }
         });
         mAnimatorSet.start();
