@@ -38,6 +38,11 @@ public class MainActivity extends AppCompatActivity {
     private TextView mScore;
 
     /**
+     * {@link SoundEffects} used for playing audio resources.
+     */
+    private SoundEffects mSoundEffects;
+
+    /**
      * Invoked once when this {@link MainActivity} is initially created. It initializes this
      * activity's member variables and initializes the user interface.
      */
@@ -50,6 +55,7 @@ public class MainActivity extends AppCompatActivity {
         mScore = findViewById(R.id.score);
         mDotsGrid = findViewById(R.id.gameGrid);
         mDotsGrid.setGridListener(mGridListener);
+        mSoundEffects = SoundEffects.getInstance(getApplicationContext());
 
         mGame = DotsGame.getInstance();
         startNewGame();
@@ -68,8 +74,18 @@ public class MainActivity extends AppCompatActivity {
             // Ignore selections when game is over.
             if (mGame.isGameOver()) return;
 
-            // Add/remove dot to/from selected dots.
+            // Play first tone when first dot is selected.
+            if (selectionStatus == DotsGrid.DotSelectionStatus.First) {
+                mSoundEffects.resetTones();
+            }
+
+            // Select the dot and play the right tone.
             DotsGame.DotStatus addStatus = mGame.processDot(dot);
+            if (addStatus == DotsGame.DotStatus.Added) {
+                mSoundEffects.playTone(true);
+            } else if (addStatus == DotsGame.DotStatus.Removed) {
+                mSoundEffects.playTone(false);
+            }
 
             if (selectionStatus == DotsGrid.DotSelectionStatus.Last) {
                 if (mGame.getSelectedDots().size() > 1) {
@@ -88,6 +104,10 @@ public class MainActivity extends AppCompatActivity {
             mGame.finishMove();
             mDotsGrid.invalidate();
             updateMovesAndScore();
+
+            if (mGame.isGameOver()) {
+                mSoundEffects.playGameOver();
+            }
         }
     };
 
