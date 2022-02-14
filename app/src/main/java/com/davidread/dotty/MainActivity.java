@@ -2,6 +2,9 @@ package com.davidread.dotty;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
+import android.animation.ObjectAnimator;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.TextView;
@@ -84,10 +87,37 @@ public class MainActivity extends AppCompatActivity {
 
     /**
      * Invoked when the new game {@link android.widget.Button} is clicked in {@link MainActivity}.
-     * It simply calls {@link #startNewGame()}.
+     * It animates the removal of {@link #mDotsGrid} from the screen, resets the state of
+     * {@link #mGame}, and finally animates the addition of {@link #mDotsGrid} with the new game
+     * state.
      */
     public void newGameClick(View view) {
-        startNewGame();
+
+        // Animate mDotsGrid down off screen.
+        int screenHeight = this.getWindow().getDecorView().getHeight();
+        ObjectAnimator moveBoardOff = ObjectAnimator.ofFloat(
+                mDotsGrid,
+                "translationY",
+                screenHeight
+        );
+        moveBoardOff.setDuration(500);
+        moveBoardOff.start();
+
+        moveBoardOff.addListener(new AnimatorListenerAdapter() {
+            public void onAnimationEnd(Animator animation) {
+                startNewGame();
+
+                // Animate mDotsGrid from above the screen down to default location.
+                ObjectAnimator moveBoardOn = ObjectAnimator.ofFloat(
+                        mDotsGrid,
+                        "translationY",
+                        -screenHeight,
+                        0
+                );
+                moveBoardOn.setDuration(500);
+                moveBoardOn.start();
+            }
+        });
     }
 
     /**
